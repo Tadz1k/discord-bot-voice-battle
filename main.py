@@ -17,4 +17,4 @@ if __name__ == '__main__':
     client.load_extension('bot_commands')
 
 
-    client.run('put-your-secret-key-here')
+    client.run('change-me')
