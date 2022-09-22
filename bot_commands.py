@@ -1,9 +1,12 @@
 import asyncio
+import imp
 from pydoc import cli
 import discord
 from discord.ext import commands
 from discord.ext.audiorec import NativeVoiceClient
 from discord import FFmpegAudio
+import time
+import random
 
 
 #own imports
@@ -34,14 +37,30 @@ async def disconnect(ctx):
 
 @commands.command()
 async def round_start(ctx):
-    voice = await ctx.author.voice.channel.connect()
+
+    channel: discord.VoiceChannel = ctx.author.voice.channel
+    voice = await channel.connect()
     await ctx.send(ctx.message.author)
-    play_round_sound_sequence(voice, 0)
+    sound_duration_seconds = futils.get_sound_duration(settings.voice_sequence[1])
+    loop = asyncio.get_event_loop()
+    task = loop.create_task(play_round_sound_sequence(voice, 0))
+    loop.run_until_complete(task)
+
+    
+    #Start recording - reconnect for change encoder
+    await ctx.voice_client.disconnect()
+    
+
+
+
+
 
 
 
 #other functions
 def play_round_sound_sequence(voice, index):
+    if index == len(settings.voice_sequence)+1:
+        return
     if(index < len(settings.voice_sequence)):
         voice.play(discord.FFmpegPCMAudio(executable=settings.ffmpeg_path, source=settings.voice_sequence[index]),after = lambda x=None: play_round_sound_sequence(voice,index+1))
     else:
