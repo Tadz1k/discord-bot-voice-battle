@@ -17,4 +17,4 @@ if __name__ == '__main__':
     client.load_extension('bot_commands')
 
 
-    client.run('MTAyMTc2MDExMDUzNzc1NjY5NA.G-3_Wz.b00t1zT-aMdP6Ux21daQVFTzy-7Gn9uJO03Hqw')
+    client.run('change-me')
