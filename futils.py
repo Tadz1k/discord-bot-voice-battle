@@ -21,5 +21,4 @@ def get_sound_duration(sound_path):
     audio_info = audio.info
     audio_len = int(audio_info.length)
     hours, mins, seconds = utils.calculate_sound_duration(audio_len)
-    print(seconds)
     return seconds
