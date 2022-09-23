@@ -1,4 +1,5 @@
 import asyncio
+from distutils.log import info
 import imp
 from pydoc import cli
 import discord
@@ -7,13 +8,13 @@ from discord.ext.audiorec import NativeVoiceClient
 from discord import FFmpegAudio
 import time
 import random
-
+import threading
 
 #own imports
 import futils
 import settings
 
-
+result_available = threading.Event()
 
 @commands.command()
 async def help(ctx):
@@ -25,53 +26,43 @@ async def siema(ctx):
     await ctx.send("yo")
 
 @commands.command()
-async def join(ctx):
-    channel: discord.VoiceChannel = ctx.author.voice.channel
-    if ctx.voice_client is not None:
-        return await ctx.voice_client.move_to(channel)
-    await channel.connect(cls=NativeVoiceClient)
-
-@commands.command()
 async def disconnect(ctx):
     await ctx.voice_client.disconnect()
 
 @commands.command()
 async def round_start(ctx):
-
-    channel: discord.VoiceChannel = ctx.author.voice.channel
-    voice = await channel.connect()
+    # Play sound sequence and disconnect
+    voice = await ctx.author.voice.channel.connect()
     await ctx.send(ctx.message.author)
     sound_duration_seconds = futils.get_sound_duration(settings.voice_sequence[1])
-    loop = asyncio.get_event_loop()
-    task = loop.create_task(play_round_sound_sequence(voice, 0))
-    loop.run_until_complete(task)
-
-    
-    #Start recording - reconnect for change encoder
+    thread = threading.Thread(target=play_round_sound_sequence(voice, 0, ctx))
+    thread.start()
+    result_available.wait()
     await ctx.voice_client.disconnect()
-    
-
-
-
-
+    #Start recording - reconnect for change encoder
 
 
 
 #other functions
-def play_round_sound_sequence(voice, index):
-    if index == len(settings.voice_sequence)+1:
-        return
+def play_round_sound_sequence(voice, index, ctx):
+    '''
+    LEN = 3
+    index = 0 -- info
+    index = 1 -- sound
+    index = 2 -- peep
+    index = 3 -- disconnect
+    '''
     if(index < len(settings.voice_sequence)):
-        voice.play(discord.FFmpegPCMAudio(executable=settings.ffmpeg_path, source=settings.voice_sequence[index]),after = lambda x=None: play_round_sound_sequence(voice,index+1))
+        voice.play(discord.FFmpegPCMAudio(executable=settings.ffmpeg_path, source=settings.voice_sequence[index]),after = lambda _: play_round_sound_sequence(voice,index+1, ctx))
     else:
-        return
+        result_available.set()
+        return 1
     
 
 
 def setup(client):
     client.add_command(siema)
     client.add_command(help)
-    client.add_command(join)
     client.add_command(disconnect)
     client.add_command(round_start)
 
